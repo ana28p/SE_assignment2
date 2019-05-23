@@ -2,15 +2,16 @@ module StringBasedCloneDetector
 
 import DataTypes;
 import steps::stringbased::FileReader;
+import steps::stringbased::Type1CloneDetection;
 
 import IO;
 
-void detectClonesUsingStringsOnSmallSet() = detectClonesUsingStrings(|project://assignment2/data/small|);
-void detectClonesUsingStringsOnLargeSet() = detectClonesUsingStrings(|project://assignment2/data/large|);
+void detectClonesUsingStringsOnSmallSet() = detectClonesUsingStrings(|project://SE_Assignment2/data/small|);
+void detectClonesUsingStringsOnLargeSet() = detectClonesUsingStrings(|project://SE_Assignment2/data/large|);
 
 void detectClonesUsingStrings(loc dataDir) {
-   MethodContent origMethods = readFiles(dataDir);
-
-  // TODO: implement some string based clone detection technique.
-  //   HINT: Try to decompose in seperate steps (like in the previous assignment)
+	minLines = 10;
+	MethodContent origMethods = readFiles(dataDir);
+	Clone allClones = type1CloneDetection(origMethods, minLines);
 }
+
