@@ -18,148 +18,76 @@ Clone detectClones(MethodContent origMethods, int minLines, bool type2) {
 		origMethods[l] = removeEmptyLines(origMethods[l]);	
 		if (type2) {
 			origMethods[l] = typeTransform(origMethods[l]);	
+			origMethods[l] = removeSpace(origMethods[l]);
 		}
-		//origMethods[l] = removeSpace(origMethods[l]);
 	}
+	
 	if (type2) {
 		println("(5/9) Detect type 2 clones");
 	}
 	else {
 		println("(3/9) Detect type 1 clones");
 	}
-	map[loc, set[loc]] correspond = filterCloneMethods(origMethods, minLines);
-	Clone clones = {};
+	map[loc, str] mergedLines = getMergedLines(origMethods, type2);
+	map[loc, int] sizes = getSizes(origMethods);
+	return getClones(mergedLines, sizes, minLines, origMethods, type2);
+}
 
-	// Compare all methods
-	for (l <- correspond) {
-		for (l2 <- correspond[l]) {
-			occurs1 = occuringLines(origMethods[l]);
-			occurs2 = occuringLines(origMethods[l2]);
-			if (l != l2 && (size(occurs1 & occurs2) >= minLines || type2)) {
-				clones += getClones(origMethods[l], origMethods[l2], minLines, type2);
+Clone getClones(map[loc, str] mergedLines, map[loc, int] sizes, int minLines, MethodContent origMethods, bool isType2) {
+	map[str, set[loc]] locMap = ();
+	Clone clones = {};
+	for (l <- mergedLines) {
+		line = mergedLines[l];
+		if (line in locMap) {
+			locMap[line] = locMap[line] + {l};
+		}
+		else {
+			locMap[line] = {l};
+		}
+	}
+	
+	for (l <- mergedLines) {
+		line = mergedLines[l];
+		for (l2 <- locMap[line], l != l2) {
+			minSize = min(sizes[l], sizes[l2]);
+			if (minSize >= minLines) {
+				if (isType2) {
+					clones += {<l, l2, type2(), minSize>};
+				}
+				else {
+					clones += {<l, l2, type1(), minSize>};
+				}
 			}
 		}
 	}
 	return clones;
 }
 
-set[str] occuringLines(Content fileMethods) {
-	set[str] occurs = {};
-	for (<nr, line> <- fileMethods) {
-		occurs += {line};
+map[loc, int] getSizes(MethodContent origMethods) {
+	map[loc, int] sizes = ();
+	for (l <- origMethods) {
+		int size = 0;
+		for (<nr, line> <- origMethods[l]) {
+			size += 1;
+		}
+		sizes[l] = size;
 	}
-	return occurs;
+	return sizes;
 }
 
-map[loc, set[loc]] filterCloneMethods(MethodContent origMethods, int minLines) {
-	real max_occur_threshold = 5.0;
-	real minimum_threshold = 5.0;
-	int size = 0;
-	set[loc] filtered = {};
-	map[str, int] lineOccur = ();
-	map[str, set[loc]] lineInMethod = ();
-	map[loc, set[loc]] result = ();
+map[loc, str] getMergedLines(MethodContent origMethods, bool isType2) {
+	map[loc, str] mergedLines = ();
 	for (l <- origMethods) {
-		size += 1;
+		str merged = "";
 		for (<nr, line> <- origMethods[l]) {
-			if (line in lineOccur) {
-				lineInMethod[line] = lineInMethod[line] + {l};
-				lineOccur[line] = lineOccur[line] + 1;
-			}
-			else {
-				lineInMethod[line] = {l};
-				lineOccur[line] = 1;
+			merged += line;
+			if (isType2) {
+				merged += "-";
 			}
 		}
+		mergedLines[l] = merged;
 	}
-	for (l <- origMethods) {
-		int duplicateCount = 0;
-		for (<nr, line> <- origMethods[l]) {
-			if (lineOccur[line] >= 2) {
-				duplicateCount += 1;
-			} 
-		}
-		if (duplicateCount >= minLines) {
-			filtered += {l};
-		}
-	}
-	for (l <- filtered) {
-		set[loc] others = {};
-		for (<nr, line> <- origMethods[l]) {
-			others += lineInMethod[line];
-		}
-		result[l] = others & filtered;
-	}
-	return result;
-}
-
-Clone getClones(Content methods1, Content methods2, int minLines, bool isType2) {
-	int lineSim = 0;
-	map[tuple[int, int], int] matching = ();
-	if (size(methods1) > 1 && size(methods2) > 0) {
-		for (int i <- [0 .. (size(methods1)) ]) {
-			int j = size(methods2) - 1;
-			if (methods1[i].line == methods2[j].line) {
-				matching += (<i, j> : 1);
-			}
-			else {
-				matching += (<i, j>: 0);
-			}
-		}
-	}
-	
-	if (size(methods1) > 0 && size(methods2) > 1) {
-		for (int j <- [0 .. (size(methods2))]) {
-			int i = size(methods1) - 1;
-			if (methods1[i].line == methods2[j].line) {
-				matching += (<i, j> : 1);
-			}
-			else {
-				matching += (<i, j>: 0);
-			}
-		}
-	}
-	
-	if (size(methods1) > 1 && size(methods2) > 1) {
-		for (int i <- reverse([0 .. (size(methods1) - 1)])) {
-			for (int j <- reverse([0 .. (size(methods2) - 1)])) {
-				if (methods1[i].line == methods2[j].line) {	
-					matching += (<i, j> : 1  + matching[<i + 1, j + 1>]);
-				}
-				else {
-					matching += (<i, j>: 0);
-				}
-			}
-		}
-	}
-	
-	int max_score = -1;
-	loc loc1;
-	loc loc2;
-	if (size(methods1) > 0 && size(methods2) > 0) {
-		for (int i <- [0 .. (size(methods1) - 1)]) {
-			for (int j <- [0 .. (size(methods2) - 1)]) {
-				int score = matching[<i, j>];
-				if (score > max_score) {
-					max_score = score;
-					loc1 = methods1[i].nr;
-					loc2 = methods2[j].nr;
-				}
-			}
-		}
-	}
-	
-	if (max_score < minLines) {
-		return {};
-	}
-	else {
-		if (isType2) {
-			return {<loc1, loc2, type2(), max_score>};
-		}
-		else {
-			return {<loc1, loc2, type1(), max_score>};
-		}
-	}
+	return mergedLines;
 }
 
 Content typeTransform(Content fileMethods) {
@@ -170,9 +98,9 @@ Content typeTransform(Content fileMethods) {
 	map[str, str] replacing = ("" : "", "{": "{", "}": "}");
 	int counter = 0;
 	for (<nr, line> <- fileMethods) {
-		line = escape(line, ("!": "", "\"": "", "#": "", "$": "", "%": "", "&": "", "\'": "", "(": "", ")": "", 
-			"*": "", "+": "", ",": "", "-": "", ".": "", "/": "", ":": "", ";": "", "\<": "", "=": "", "\>": "",
-			"?": "", "@": "", "[": "", "\\": "", "]": "", "^": "", "_": "", "|": "", "~": ""));
+		line = escape(line, ("!": " ", "\"": " ", "#": " ", "$": " ", "%": " ", "&": " ", "\'": " ", "(": " ", ")": " ", 
+			"*": " ", "+": " ", ",": " ", "-": " ", ".": " ", "/": " ", ":": " ", ";": " ", "\<": " ", "=": " ", "\>": " ",
+			"?": " ", "@": " ", "[": " ", "\\": " ", "]": " ", "^": " ", "_": " ", "|": " ", "~": " ", "{": " ", "}": " "));
 		list[str] words = split(" ", line);
 		for (str w <- words) {
 			if (w in occurs) {

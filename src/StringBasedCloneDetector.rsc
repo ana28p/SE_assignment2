@@ -13,7 +13,8 @@ void detectClonesUsingStringsOnSmallSet() = detectClonesUsingStrings(|project://
 void detectClonesUsingStringsOnLargeSet() = detectClonesUsingStrings(|project://SE_Assignment2/data/large|, false);
 
 void detectClonesUsingStrings(loc dataDir, bool smallSet) {
-	minLines = 10;
+	bool evaluationOn = true;
+	int minLines = 10;
 	println("(1/9) Reading the files");
 	MethodContent origMethods = readFiles(dataDir);
 	println("(2/9) Rewriting the lines for type 1 clones");
@@ -21,33 +22,16 @@ void detectClonesUsingStrings(loc dataDir, bool smallSet) {
 	println("(4/9) Rewriting the lines for type 2 clones");
 	Clone type2Clones = detectClones(origMethods, minLines, true);
 	println("(6/9) Filter duplicate occurrence clones");
-	type1Clones = filterType1Clones(type1Clones, type2Clones);
 	type2Clones = filterType2Clones(type1Clones, type2Clones);
 	Clone allClones = type1Clones + type2Clones;
 	println("(7/9) Print all clones");
 	printClones(allClones);
-	println("(8/9) Evaluate clone duplication tool on type 1");
-	evaluate(allClones, smallSet, type1());
-	println("(9/9) Evaluate clone duplication tool on type 2");
-	evaluate(allClones, smallSet, type2());
-}
-
-
-Clone filterType1Clones(Clone clones1, Clone clones2) {
-	Clone filtered = {};
-	for (<f1, g1, ct1, ls1> <- clones1) {
-		bool include = true;
-		for (<f2, g2, ct2, ls2> <- clones2) {
-			if (f1.uri == f2.uri && f1.begin.line >= f2.begin.line && f1.begin.line + ls1 <= f2.begin.line + ls2 && ls2 > ls1) {
-				include = false;
-				break;
-			}
-		} 
-		if (include) {
-			filtered += {<f1, g1, ct1, ls1>};
-		}
+	if (evaluationOn) {
+		println("(8/9) Evaluate clone duplication tool on type 1");
+		evaluate(allClones, smallSet, type1());
+		println("(9/9) Evaluate clone duplication tool on type 2");
+		evaluate(allClones, smallSet, type2());
 	}
-	return filtered;
 }
 
 Clone filterType2Clones(Clone clones1, Clone clones2) {
@@ -55,7 +39,7 @@ Clone filterType2Clones(Clone clones1, Clone clones2) {
 	for (<f2, g2, ct2, ls2> <- clones2) {
 		bool include = true;
 		for (<f1, g1, ct1, ls1> <- clones1) {
-			if (f1.uri == f2.uri && f1.begin.line <= f2.begin.line && f1.begin.line + ls1 >= f2.begin.line + ls2 && ls2 <= ls1) {
+			if (f1.uri == f2.uri && f1.begin.line == f2.begin.line && g1.uri == g2.uri && g1.begin.line == g2.begin.line) {
 				include = false;
 				break;
 			}
