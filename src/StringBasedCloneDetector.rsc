@@ -65,7 +65,6 @@ void printClones(Clone allClones) {
 }
 
 void evaluate(Clone allClones, bool smallSet, CloneType ct) {
-	bool showMisses = false;
 	Clone realClones = {};
 	if (smallSet) {
 		realClones = readNiCad5ResultForSmallSet();
@@ -74,78 +73,112 @@ void evaluate(Clone allClones, bool smallSet, CloneType ct) {
 		realClones = readNiCad5ResultForLargeSet();
 	}
 	
-	real numPrecision = 0.0;
-	real numAllClones = 0.0;
+	real type1Classified = 0.0;
+	real type2Classified = 0.0;
+	real type3Classified = 0.0;
+	real noClone = 0.0;
 	for (<f1, g1, ct1, ls1> <- allClones) {
 		if (ct1 == ct) {
-			numAllClones += 1.0;
 			bool contained = false;
 			for (<f2, g2, ct2, ls2> <- realClones) {
 				f1name = split("/", f1.uri)[-1];
 				g1name = split("/", g1.uri)[-1];
 				f2name = split("/", f2.uri)[-1];
 				g2name = split("/", g2.uri)[-1];
-				if (ct2 == ct && f1name == f2name && f1.begin.line == f2.begin.line
+				if (f1name == f2name && f1.begin.line == f2.begin.line
 					&& g1name == g2name && g1.begin.line == g2.begin.line) {
+						switch (ct2) {
+							case type1(): type1Classified += 1.0;
+							case type2(): type2Classified += 1.0;
+							case type3(): type3Classified += 1.0;
+						}
 						contained = true;
 						break;
 				}
-				if (ct2 == ct && f1name == g2name && f1.begin.line == g2.begin.line
+				if (f1name == g2name && f1.begin.line == g2.begin.line
 					&& g1name == f2name && g1.begin.line == f2.begin.line) {
+						switch (ct2) {
+							case type1(): type1Classified += 1.0;
+							case type2(): type2Classified += 1.0;
+							case type3(): type3Classified += 1.0;
+						}
 						contained = true;
 						break;
 				}
 			}
-			if (contained) {
-				numPrecision += 1.0;
-			}
-			else {
-				if (showMisses) {
-					println("Precision Miss");
-					println(f1);
-					println(g1);
-				}
+			if (!contained) {
+				noClone += 1.0;
 			}
 		}
 	}
 	
-	real precision = numPrecision / numAllClones;
+	real precision = 0.0;
+	if (ct == type1()) {
+		precision = type1Classified / (type1Classified + type2Classified + type3Classified + noClone);
+	}
+	else {
+		precision = type2Classified / (type1Classified + type2Classified + type3Classified + noClone);
+	}
 	
-	real numRecall = 0.0;
-	numAllClones = 0.0;
+	real numMisses = 0.0;
+	real otherClones = 0.0;
 	for (<f2, g2, ct2, ls2> <- realClones) {
 		if (ct2 == ct) {
-			numAllClones += 1.0;
 			bool contained = false;
 			for (<f1, g1, ct1, ls1> <- allClones) {
 				f1name = split("/", f1.uri)[-1];
 				g1name = split("/", g1.uri)[-1];
 				f2name = split("/", f2.uri)[-1];
 				g2name = split("/", g2.uri)[-1];
-				if (ct1 == ct && f1name == f2name && f1.begin.line == f2.begin.line
+				if (f1name == f2name && f1.begin.line == f2.begin.line
 					&& g1name == g2name && g1.begin.line == g2.begin.line) {
 					contained = true;
+					if (ct1 != ct) {
+						otherClones += 1.0;
+					}
+					break;
 				}
-				if (ct1 == ct && f1name == g2name && f1.begin.line == g2.begin.line
+				if (f1name == g2name && f1.begin.line == g2.begin.line
 					&& g1name == f2name && g1.begin.line == f2.begin.line) {
 					contained = true;
+					if (ct1 != ct) {
+						otherClones += 1.0;
+					}
+					break;
 				}
 			}
-			if (contained) {
-				numRecall += 1.0;
-			}
-			else {
-				if (showMisses) {
-					println("Recall Miss");
-					println(f2);
-					println(g2);
-				}
+			if (!contained) {
+				numMisses += 1.0;
 			}
 		}
 	}
 	
-	real recall = numRecall / numAllClones;
+	real recall = 0.0;
+	if (ct == type1()) {
+		recall = type1Classified / (type1Classified + otherClones + numMisses);
+	}
+	else {
+		recall = type2Classified / (type2Classified + otherClones + numMisses);
+	}
 	real fmeasure = 2 * (precision * recall) / (precision + recall);
+	// Are placed under each other in the columns
+	print("Type 1 classified: ");
+	print(type1Classified);
+	print("\n");
+	print("Type 2 classified: ");
+	print(type2Classified);
+	print("\n");
+	print("Type 3 classified: ");
+	print(type3Classified);
+	print("\n");
+	// Belong to the lower row
+	print("No Clones: ");
+	print(noClone);
+	print("\n");
+	// Belong to the right column
+	print("Misses: "); 
+	print(numMisses);
+	print("\n");
 	print("Precision: ");
 	print(precision);
 	print("\n");
@@ -155,8 +188,4 @@ void evaluate(Clone allClones, bool smallSet, CloneType ct) {
 	print("F-Measure: ");
 	print(fmeasure);
 	print("\n");
-}
-
-bool collide(int bl1, int bl2, int ls1, int ls2) {
-	return (bl1 <= bl2 && bl1 + ls1 >= bl2) || (bl2 <= bl1 && bl2 + ls2 >= bl1);
 }
