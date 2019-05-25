@@ -65,6 +65,7 @@ void printClones(Clone allClones) {
 }
 
 void evaluate(Clone allClones, bool smallSet, CloneType ct) {
+	bool showMisses = false;
 	Clone realClones = {};
 	if (smallSet) {
 		realClones = readNiCad5ResultForSmallSet();
@@ -84,19 +85,26 @@ void evaluate(Clone allClones, bool smallSet, CloneType ct) {
 				g1name = split("/", g1.uri)[-1];
 				f2name = split("/", f2.uri)[-1];
 				g2name = split("/", g2.uri)[-1];
-				if ((ct2 == ct || ct2 == type3()) && f1name == f2name && collide(f1.begin.line, f2.begin.line, ls1, ls2)
-					&& g1name == g2name && collide(g1.begin.line, g2.begin.line, ls1, ls2)) {
+				if (ct2 == ct && f1name == f2name && f1.begin.line == f2.begin.line
+					&& g1name == g2name && g1.begin.line == g2.begin.line) {
 						contained = true;
 						break;
 				}
-				if ((ct2 == ct || ct2 == type3()) && f1name == g2name && collide(f1.begin.line, g2.begin.line, ls1, ls2)
-					&& g1name == f2name && collide(g1.begin.line, f2.begin.line, ls1, ls2)) {
+				if (ct2 == ct && f1name == g2name && f1.begin.line == g2.begin.line
+					&& g1name == f2name && g1.begin.line == f2.begin.line) {
 						contained = true;
 						break;
 				}
 			}
 			if (contained) {
 				numPrecision += 1.0;
+			}
+			else {
+				if (showMisses) {
+					println("Precision Miss");
+					println(f1);
+					println(g1);
+				}
 			}
 		}
 	}
@@ -114,17 +122,24 @@ void evaluate(Clone allClones, bool smallSet, CloneType ct) {
 				g1name = split("/", g1.uri)[-1];
 				f2name = split("/", f2.uri)[-1];
 				g2name = split("/", g2.uri)[-1];
-				if (ct1 == ct && f1name == f2name && collide(f1.begin.line, f2.begin.line, ls1, ls2)
-					&& g1name == g2name && collide(g1.begin.line, g2.begin.line, ls1, ls2)) {
+				if (ct1 == ct && f1name == f2name && f1.begin.line == f2.begin.line
+					&& g1name == g2name && g1.begin.line == g2.begin.line) {
 					contained = true;
 				}
-				if (ct1 == ct && f1name == g2name && collide(f1.begin.line, g2.begin.line, ls1, ls2)
-					&& g1name == f2name && collide(g1.begin.line, f2.begin.line, ls1, ls2)) {
+				if (ct1 == ct && f1name == g2name && f1.begin.line == g2.begin.line
+					&& g1name == f2name && g1.begin.line == f2.begin.line) {
 					contained = true;
 				}
 			}
 			if (contained) {
 				numRecall += 1.0;
+			}
+			else {
+				if (showMisses) {
+					println("Recall Miss");
+					println(f2);
+					println(g2);
+				}
 			}
 		}
 	}

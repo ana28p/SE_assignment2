@@ -91,10 +91,8 @@ map[loc, str] getMergedLines(MethodContent origMethods, bool isType2) {
 }
 
 Content typeTransform(Content fileMethods) {
-	int word_threshold = 3;
 	Content filtered = [];
 	Content filtered2 = [];
-	map[str, int] occurs = ();
 	map[str, str] replacing = ("" : "", "{": "{", "}": "}");
 	int counter = 0;
 	for (<nr, line> <- fileMethods) {
@@ -102,14 +100,6 @@ Content typeTransform(Content fileMethods) {
 			"*": " ", "+": " ", ",": " ", "-": " ", ".": " ", "/": " ", ":": " ", ";": " ", "\<": " ", "=": " ", "\>": " ",
 			"?": " ", "@": " ", "[": " ", "\\": " ", "]": " ", "^": " ", "_": " ", "|": " ", "~": " ", "{": " ", "}": " "));
 		list[str] words = split(" ", line);
-		for (str w <- words) {
-			if (w in occurs) {
-				occurs[w] = occurs[w] + 1;
-			}
-			else {
-				occurs[w] = 1;
-			}
-		}
 		filtered += [<nr, line>];
 	}
 	
@@ -117,13 +107,8 @@ Content typeTransform(Content fileMethods) {
 		list[str] words = split(" ", line);
 		for	(int i <- [0 .. size(words)]) {
 			if (words[i] notin replacing) {
-				if (occurs[words[i]] >= word_threshold) {
-					replacing[words[i]] = "w" + toString(counter);
-					counter += 1;
-				}
-				else {
-					replacing[words[i]] = "";
-				}
+				replacing[words[i]] = "w" + toString(counter);
+				counter += 1;
 			}
 			words[i] = replacing[words[i]];
 		}
@@ -197,7 +182,8 @@ Content removeSpChars(Content fileMethods) {
 Content removeEmptyLines(Content fileMethods) {
 	Content filtered = [];
 	for (<nr, line> <- fileMethods) {
-		if (size(line) > 0) {
+		emptyLine = replaceAll(line, " ", "");
+		if (size(emptyLine) > 0) {
 			filtered += [<nr, line>];
 		}
 	}
