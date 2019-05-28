@@ -22,7 +22,7 @@ bool couldSubTreeBeAClone(\c:constructor(_,_,_, Statement impl)) = (c.src.end.li
 default bool couldSubTreeBeAClone(Declaration d) = d.src.end.line - d.src.begin.line >= minCloneLineSize();
 
 @memo
-private int minCloneLineSize() = 10;
+private int minCloneLineSize() = 9; // considering 1 line is for method definition
 
 @doc {
   Remove the annotations from a declaration
