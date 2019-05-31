@@ -9,8 +9,10 @@ import String;
 
 void evaluate(Clone clones, bool smallSet, CloneType ct) {
 	if (smallSet) {
+		//evaluate(clones, readNiCad5ResultForSmallSet(), ct);
 		evaluate(clones, readNiCad5UniqueResultForSmallSet(), ct);
 	} else {
+		//evaluate(clones, readNiCad5ResultForLargeSet(), ct);
 		evaluate(clones, readNiCad5UniqueResultForLargeSet(), ct);
 	}
 }
@@ -28,7 +30,10 @@ void evaluate(Clone clones, Clone realClones, CloneType ct) {
 						switch (ct2) {
 							case type1(): type1Classified += 1.0;
 							case type2(): type2Classified += 1.0;
-							case type3(): type3Classified += 1.0;
+							case type3(): {
+								type3Classified += 1.0; 
+								//println("type3: <f1>, <g1>, <ct1>, <ls1>");
+								}
 						}
 						contained = true;
 						break;
@@ -36,6 +41,7 @@ void evaluate(Clone clones, Clone realClones, CloneType ct) {
 			}
 			if (!contained) {
 				noClone += 1.0;
+				//println("incorrect (noClone): <f1>, <g1>, <ct1>, <ls1>");
 			}
 		}
 	}
@@ -65,6 +71,7 @@ void evaluate(Clone clones, Clone realClones, CloneType ct) {
 			}
 			if (!contained) {
 				numMisses += 1.0;
+				//println("missed: <f2>, <g2>, <ct2>, <ls2>");
 			}
 		}
 	}

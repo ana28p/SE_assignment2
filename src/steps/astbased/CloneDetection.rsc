@@ -1,4 +1,4 @@
-module steps::astbased::CloneDetector
+module steps::astbased::CloneDetection
 
 import lang::java::m3::AST;
 
@@ -71,8 +71,6 @@ Clone collectType2Clones(map[loc,Declaration] asts, Clone type1Clones) {
 }
 
 int getLineSimilarity(int lines1, int lines2) = (min(lines1, lines2) * 100) / max(lines1, lines2);
-
-bool couldSubTreeBeAType2Clone(\m1:method(_,_,_,_, Statement impl1), \m2:method(_,_,_,_, Statement impl2)) = (m1.src.end.line - impl1.src.begin.line) == (m2.src.end.line - impl2.src.begin.line);
 
 Declaration standardizeMethod(Declaration method) {
 	Declaration standardizeMethod = removeSourceLocations(method);
